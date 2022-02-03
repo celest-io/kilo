@@ -33,7 +33,7 @@ config:
   # cni: true
 
   ## Path to CNI config. (default "/etc/cni/net.d/10-kilo.conflist")
-  cniPath: "/etc/cni/net.d/10-kilo.conflist"
+  # cniPath: "/etc/cni/net.d/10-kilo.conflist"
 
   ## Should Kilo run in compatibility mode? Possible values: flannel
   # compatibility: "flannel"
@@ -48,7 +48,7 @@ config:
   # kubeconfig: ""
 
   ## The address at which to listen for health and metrics. (default ":1107")
-  metricsPort: "1107"
+  metricsPort: 1107
 
   ## Kilo manage routes within a location? (default true)
   # local: true
