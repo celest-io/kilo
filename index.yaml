@@ -1,0 +1,20 @@
+apiVersion: v1
+entries:
+  kilo:
+  - annotations:
+      category: Infrastructure
+    apiVersion: v2
+    appVersion: 0.3.1
+    created: "2022-02-03T17:18:26.38253934Z"
+    description: A Helm chart for Kilo
+    digest: 6053233038e49d9fc6f0727d42ed3d3d39dd05d86bf704b1d125d4a603394c41
+    home: https://kilo.squat.ai
+    icon: https://kilo.squat.ai/img/kilo.svg
+    name: kilo
+    sources:
+    - https://github.com/squat/kilo
+    type: application
+    urls:
+    - https://github.com/celest-io/kilo/releases/download/kilo-0.1.0/kilo-0.1.0.tgz
+    version: 0.1.0
+generated: "2022-02-03T17:18:26.38254484Z"
