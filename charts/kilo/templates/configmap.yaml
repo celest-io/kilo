@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kilo.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kilo.labels" . | nindent 4 }}
+data:
+  cni-conf.json: |
+    {
+       "cniVersion":"{{ .Values.image.tag | default .Chart.AppVersion }}",
+       "name":"kilo",
+       "plugins":[
+          {
+             "name":"kubernetes",
+             "type":"bridge",
+             "bridge":"kube-bridge",
+             "isDefaultGateway":true,
+             "forceAddress":true,
+             "mtu": {{ .Values.config.mtu }},
+             "ipam":{
+                "type":"host-local"
+             }
+          },
+          {
+             "type":"portmap",
+             "snat":true,
+             "capabilities":{
+                "portMappings":true
+             }
+          }
+       ]
+    }

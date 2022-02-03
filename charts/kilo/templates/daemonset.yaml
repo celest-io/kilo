@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "kilo.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kilo.labels" . | nindent 4 }}
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kilo.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kilo.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "kilo.serviceAccountName" . }}
+      hostNetwork: true
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: kilo
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - --hostname=$(NODE_NAME)
+            {{- if .Values.config.backend }}
+            - --backend={{ .Values.config.backend }}
+            {{- end }}
+            {{- if .Values.config.cleanupInterface }}
+            - --clean-up-interface
+            {{- end }}
+            {{- if .Values.config.cni }}
+            - --cni
+            {{- end }}
+            {{- if .Values.config.cniPath }}
+            - --cni-path={{ .Values.config.cniPath }}
+            {{- end }}
+            {{- if .Values.config.compatibility }}
+            - --compatibility={{ .Values.config.compatibility }}
+            {{- end }}
+            {{- if .Values.config.encapsulate }}
+            - --encapsulate={{ .Values.config.encapsulate }}
+            {{- end }}
+            {{- if .Values.config.interface }}
+            - --interface={{ .Values.config.interface }}
+            {{- end }}
+            {{- if .Values.config.kubeconfig }}
+            - --kubeconfig={{ .Values.config.kubeconfig }}
+            {{- end }}
+            {{- if .Values.config.metricsPort }}
+            - --listen=":{{ .Values.config.metricsPort }}"
+            {{- end }}
+            {{- if .Values.config.local }}
+            - --local
+            {{- end }}
+            {{- if .Values.config.logLevel }}
+            - --log-level={{ .Values.config.logLevel }}
+            {{- end }}
+            {{- if .Values.config.master }}
+            - --master={{ .Values.config.master }}
+            {{- end }}
+            {{- if .Values.config.meshGranularity }}
+            - --mesh-granularity={{ .Values.config.meshGranularity }}
+            {{- end }}
+            {{- if .Values.config.mtu }}
+            - --mtu={{ .Values.config.mtu }}
+            {{- end }}
+            {{- if .Values.config.port }}
+            - --port={{ .Values.config.port }}
+            {{- end }}
+            {{- if .Values.config.resyncPeriod }}
+            - --resync-period={{ .Values.config.resyncPeriod }}
+            {{- end }}
+            {{- if .Values.config.subnet }}
+            - --subnet={{ .Values.config.subnet }}
+            {{- end }}
+            {{- if .Values.config.topologyLabel }}
+            - --topology-label={{ .Values.config.topologyLabel }}
+            {{- end }}
+            {{- /* --- Extra Args --- */ -}}
+            {{- if .Values.extraArgs }}
+            {{- range .Values.extraArgs }}
+            - "{{ . }}"
+            {{- end }}
+            {{- end }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: {{ .Values.config.metricsPort }}
+              name: metrics
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: cni-conf-dir
+              mountPath: /etc/cni/net.d
+            - name: kilo-dir
+              mountPath: /var/lib/kilo
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: xtables-lock
+              mountPath: /run/xtables.lock
+              readOnly: false
+            - name: kubeconfig
+              mountPath: /etc/kubernetes/kubeconfig
+              readOnly: true
+      initContainers:
+        - name: install-cni
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - set -e -x;
+              cp /opt/cni/bin/* /host/opt/cni/bin/;
+              TMP_CONF="$CNI_CONF_NAME".tmp;
+              echo "$CNI_NETWORK_CONFIG" > $TMP_CONF;
+              rm -f /host/etc/cni/net.d/*;
+              mv $TMP_CONF /host/etc/cni/net.d/$CNI_CONF_NAME
+          env:
+            - name: CNI_CONF_NAME
+              value: 10-kilo.conflist
+            - name: CNI_NETWORK_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ template "kilo.fullname" . }}
+                  key: cni-conf.json
+          volumeMounts:
+            - name: cni-bin-dir
+              mountPath: /host/opt/cni/bin
+            - name: cni-conf-dir
+              mountPath: /host/etc/cni/net.d
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      volumes:
+        - name: cni-bin-dir
+          hostPath:
+            path: /opt/cni/bin
+        - name: cni-conf-dir
+          hostPath:
+            path: /etc/cni/net.d
+        - name: kilo-dir
+          hostPath:
+            path: /var/lib/kilo
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: xtables-lock
+          hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
+        - name: kubeconfig
+          hostPath:
+            # Since kilo runs as a daemonset, it is recommended that you copy the
+            # k3s.yaml kubeconfig file from the master node to all worker nodes
+            # with the same path structure.
+            # Copying only appears necessary when the node is NOT a cluster master
+            path: /etc/rancher/k3s/k3s.yaml
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

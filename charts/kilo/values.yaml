@@ -1,0 +1,124 @@
+# Default values for kilo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  registry: docker.io
+  repository: squat/kilo
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  ## Specify a imagePullPolicy
+  ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistryKeySecretName
+
+nameOverride: ""
+fullnameOverride: ""
+
+config:
+  ## The backend for the mesh. Possible values: kubernetes (default "kubernetes")
+  # backend: "kubernetes"
+
+  ## Should Kilo delete its interface when it shuts down?
+  # cleanupInterface: false
+
+  ## Should Kilo manage the node's CNI configuration? (default true)
+  # cni: true
+
+  ## Path to CNI config. (default "/etc/cni/net.d/10-kilo.conflist")
+  cniPath: "/etc/cni/net.d/10-kilo.conflist"
+
+  ## Should Kilo run in compatibility mode? Possible values: flannel
+  # compatibility: "flannel"
+
+  ## When should Kilo encapsulate packets within a location? Possible values: never, crosssubnet, always (default "always")
+  # encapsulate: "always"
+
+  ## Name of the Kilo interface to use; if it does not exist, it will be created. (default "kilo0")
+  # interface: "kil0"
+
+  ## Path to kubeconfig.
+  # kubeconfig: ""
+
+  ## The address at which to listen for health and metrics. (default ":1107")
+  metricsPort: "1107"
+
+  ## Kilo manage routes within a location? (default true)
+  # local: true
+
+  ## Log level to use. Possible values: all, debug, info, warn, error, none (default "info")
+  # logLevel: "info"
+
+  ## The address of the Kubernetes API server (overrides any value in kubeconfig).
+  # master: ""
+
+  ## The granularity of the network mesh to create. Possible values: location, full (default "location")
+  # meshGranularity: "location"
+
+  ## The MTU of the WireGuard interface created by Kilo. (default 1420)
+  mtu: 1420
+
+  ## The port over which WireGuard peers should communicate. (default 51820)
+  # port: 51820
+
+  ## How often should the Kilo controllers reconcile? (default 30s)
+  # resyncPeriod: "30s"
+
+  ## CIDR from which to allocate addresses for WireGuard interfaces. (default "10.4.0.0/16")
+  # subnet: "10.4.0.0/16"
+
+  ## Kubernetes node label used to group nodes into logical locations. (default "topology.kubernetes.io/region")
+  # topologyLabel: "topology.kubernetes.io/region"
+
+## Specifies whether RBAC resources should be created
+##
+rbac:
+  create: true
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  # annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  # name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
